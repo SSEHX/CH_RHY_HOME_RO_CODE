@@ -361,6 +361,62 @@
           <state />
           <state />
           <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
+          <state />
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -622,7 +678,7 @@
         </option>
         <option>
           <name>AUserIncludes</name>
-          <state>$PROJ_DIR$\..//Inc</state>
+          <state>$PROJ_DIR$\..\\Inc</state>
         </option>
         <option>
           <name>AExtraOptionsCheckV2</name>
@@ -1045,6 +1101,15 @@
     </group>
     <group>
       <name>User</name>
+      <group>
+        <name>..</name>
+        <group>
+          <name>Src</name>
+        </group>
+      </group>
+      <file>
+        <name>$PROJ_DIR$\..\Src\adc.c</name>
+      </file>
       <file>
         <name>$PROJ_DIR$\..\Src\app.c</name>
       </file>
@@ -1055,61 +1120,37 @@
         <name>$PROJ_DIR$\..\Src\config.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\Src\dma.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\freertos.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\gpio.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\i2c_eeprom.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\main.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\stm32f1xx_hal_msp.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\stm32f1xx_hal_timebase_TIM.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\stm32f1xx_it.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\tim.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Src\tools.c</name>
       </file>
-      <group>
-        <name>..</name>
-        <excluded>
-          <configuration />
-        </excluded>
-        <file>
-          <name />
-          <excluded>
-            <configuration />
-          </excluded>
-        </file>
-        <group>
-          <name>Src</name>
-          <excluded>
-            <configuration />
-          </excluded>
-          <file>
-            <name />
-            <excluded>
-              <configuration />
-            </excluded>
-          </file>
-        </group>
-      </group>
       <file>
-        <name>$PROJ_DIR$/../Src/stm32f1xx_hal_msp.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/usart.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/dma.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/main.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/adc.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/gpio.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/freertos.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/tim.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/stm32f1xx_hal_timebase_TIM.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$/../Src/stm32f1xx_it.c</name>
+        <name>$PROJ_DIR$\..\Src\usart.c</name>
       </file>
     </group>
   </group>

@@ -19,6 +19,7 @@ uint8_t cmd_get_csq[]               = "AT+CSQ\r\n";         /*!<  +CSQ:22,99    
 uint8_t cmd_get_EPS_status[]        = "AT+CEREG?\r\n";      /*!<  +CEREG:0,1    OK           */
 uint8_t cmd_get_iccid[]             = "AT+NCCID?\r\n";      /*!<  +NCCID:*/
 
+uint8_t cmd_check_recv[]            = "AT+NQMGR\r\n";               
 
 /*--------------------------------
     query send or recv number
@@ -45,7 +46,8 @@ uint8_t cmd_coap_get_data[]         = "AT+NMGR\r\n";
 
     /*!<  if the get server ip is not need ip , run the following command                       */
     uint8_t cmd_disconnect[]            = "AT+CFUN=0\r\n";      /*!<  OK                        */
-    uint8_t cmd_set_server_ip[]         = "AT+NCDP=180.101.147.115,5683\r\n";
+    uint8_t cmd_set_server_ip[]         = "AT+NCDP=117.60.157.137,5683\r\n";
+    
                                                                 /*!<  OK                        */
     uint8_t cmd_set_fully_funtion[]     = "AT+CFUN=1\r\n";      /*!<  OK 
                                                                       need  long time           */
@@ -57,11 +59,11 @@ uint8_t cmd_coap_get_data[]         = "AT+NMGR\r\n";
 */
 uint8_t cmd_ok[]              = "OK";
 uint8_t cmd_error[]           = "ERROR";
-uint8_t cmd_coap_send_ok[]    = "+NSMI:SENT";
+uint8_t cmd_coap_send_ok[11]  = "+NSMI:SENT";
 
 uint8_t cmd_coap_have_recv[]  = "+NNMI";
 
-uint8_t server_ip[]           = "180.101.147.115,5683";
+uint8_t server_ip[]           = "117.60.157.137,5683";
 uint8_t header[]              = "BB666680";
 
 /*
@@ -85,16 +87,16 @@ void bc95_init(){
     device_error.bc95_init_error += bc95_send_command(cmd_check             , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     if(device_error.bc95_init_error == 0){
         //如果未检测到bc95 则设置bc95错误标志位，并挂起当前任务
-        device_error.bc95_init_error = 100;
+        device_error.bc95_init_error = BC95_CONNECT_ERROR;
         vTaskSuspend(0);
     }
-    device_error.bc95_init_error += bc95_send_command(cmd_unset_fully_funtion,cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
+    //device_error.bc95_init_error += bc95_send_command(cmd_unset_fully_funtion,cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     device_error.bc95_init_error += bc95_send_command(cmd_unset_back        , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     device_error.bc95_init_error += bc95_send_command(cmd_unset_psm         , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
 
     device_error.bc95_init_error += bc95_get_imei();
 
-    device_error.bc95_init_error += bc95_send_command(cmd_set_fully_funtion , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
+    //device_error.bc95_init_error += bc95_send_command(cmd_set_fully_funtion , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     device_error.bc95_init_error += bc95_send_command(cmd_set_pdp_context   , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     device_error.bc95_init_error += bc95_send_command(cmd_set_pdp           , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);    
     
@@ -105,14 +107,18 @@ void bc95_init(){
     device_error.bc95_init_error += bc95_set_server_ip();
     device_error.bc95_init_error += bc95_send_command(cmd_set_recv_flag     , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
     device_error.bc95_init_error += bc95_send_command(cmd_set_sended_flag   , cmd_ok, BC95_TIMEOUT, BC95_LOOP_NUMBER);
-    if(device_error.bc95_init_error != 15){         // if bc95 init have error than reboot bc95 and re init
+    if(device_error.bc95_init_error != 13){         // if bc95 init have error than reboot bc95 and re init
         device_error.bc95_init_error = 1;
         bc95_reboot();
         return;
     }else{
         device_error.bc95_init_error = 0;
-        device_status.bc95_run = 1;
-        //registe_device();
+        if(registe_device()){
+            device_status.bc95_run = 1;
+        }else{
+            bc95_reboot();
+        }
+        
     }
 }
 /*----------------------------------------------------------------
@@ -127,11 +133,10 @@ void bc95_init(){
  | Return      :        uint8_t     OK --> 1      ERROR --> 0
 ----------------------------------------------------------------*/
 uint8_t bc95_send_command(uint8_t *cmd, uint8_t *ack, uint8_t timeout, uint8_t loop){
-    _system_led;
     do{
         bc95_open_recv();
         //use usart2 send command
-        HAL_UART_Transmit_DMA(&huart1, cmd, (uint8_t)strlen((const char*)cmd));
+        HAL_UART_Transmit_DMA(&huart2, cmd, (uint8_t)strlen((const char*)cmd));
         #ifdef DEBUG
         printf("usart2 send command: %s", cmd);
         #endif
@@ -143,16 +148,10 @@ uint8_t bc95_send_command(uint8_t *cmd, uint8_t *ack, uint8_t timeout, uint8_t l
                     #ifdef DEBUG
                     printf("SUCCESS: check ack ok \r\n\r\n");
                     #endif
-                    _system_led;
+                    _network_led;
                     return OK;
                 }else{
-                    #ifdef DEBUGf
-                    printf("ERROR");
-                    printf("\r\n----- recv data ---------------\r\n");
-                    printf("%s", bc95_recv.rx_buf);
-                    printf("\r\n----- end ---------------------\r\n");
-                    printf("check ack error ...\r\n\r\n");
-                    #endif
+
                 }
             }
         }
@@ -170,7 +169,7 @@ uint8_t bc95_send_command(uint8_t *cmd, uint8_t *ack, uint8_t timeout, uint8_t l
 ----------------------------------------------------------------*/
 void bc95_open_recv(){
     _CLEAR_RX_TYPEDEF;
-    HAL_UART_Receive_DMA(&huart1, bc95_recv.rx_buf, RX_LEN);
+    HAL_UART_Receive_DMA(&huart2, bc95_recv.rx_buf, RX_LEN);
 }
 
 /*----------------------------------------------------------------
@@ -184,7 +183,7 @@ void bc95_open_recv(){
  | Return      :        ok --> 1    error --> 0
 ----------------------------------------------------------------*/
 uint8_t bc95_check_ack(uint8_t *ack){
-    _system_led;
+    _network_led;
     if(strstr((const char*)bc95_recv.rx_buf, (const char*)ack) != NULL){
         return  1;
     }else{
@@ -232,6 +231,13 @@ uint8_t bc95_get_imsi(){
     return ERROR;
 }
 
+/*----------------------------------------------------------------
+ | Function    :    uint8_t bc95_get_imei
+ | Description :    get bc95 imei
+ | Input       :    null
+ | Output      :    null
+ | Return      :        ok --> 1    error --> 0
+----------------------------------------------------------------*/
 uint8_t bc95_get_imei(){
     uint8_t count = BC95_LOOP_NUMBER;
     do{     
@@ -282,8 +288,8 @@ uint8_t bc95_get_iccid(){
                 continue;
             }
             memmove(bc95_status.iccid, &bc95_recv.rx_buf[9], 19);    // copy imsi to bc95_status.imsi
-            if(strlen((const char*)bc95_status.iccid) == 19){                     // judge imsi length
-                #ifdef DEBUG    
+            if(strlen((const char*)bc95_status.iccid) == 19){      // judge imsi length
+                #ifdef DEBUG
                 printf("SUCCESS\r\n");
                 printf("iccid:%s\r\n\r\n", bc95_status.iccid);
                 #endif
@@ -301,7 +307,7 @@ uint8_t bc95_get_iccid(){
             continue;
         }
     }while(count--);
-    return 0;
+    return ERROR;
 }
 /*----------------------------------------------------------------
  | Function    :    bc95_get_profile_status
@@ -423,10 +429,17 @@ void bc95_reboot(){
     bc95_init();
 }
 
+/*----------------------------------------------------------------
+ | Function    :    bc95_send_coap
+ | Description :    向服务器发送所有数据
+ | Input       :    null
+ | Output      :    null
+ | Return      :        ok --> 1    error --> 0
+----------------------------------------------------------------*/
 uint8_t bc95_send_coap(uint8_t *ack){
-    uint8_t cmd_coap_head[100] = "AT+NMGS=48,";
+    uint8_t cmd_coap_head[30] = "AT+NMGS=48,";
     uint16_t j = 0;
-    uint8_t cmd[600] = {0};
+    uint8_t cmd[300] = {0};
 
     j += sprintf((char*)cmd, "%s%02x",cmd_coap_head ,device_status.device_registe);
 
@@ -441,7 +454,7 @@ uint8_t bc95_send_coap(uint8_t *ack){
     strcat((char*)cmd, (char*)ByteToHexStr(header, strlen((const char*)header)));
     strcat((char*)cmd, "\r\n");
 
-    if(bc95_send_command(cmd, ack, 20, BC95_LOOP_NUMBER)){
+    if(bc95_send_command(cmd, ack, 30, BC95_LOOP_NUMBER)){
         #ifdef DEBUG    
         printf("SUCCESS:send data to server success\r\n");
         #endif
@@ -451,40 +464,76 @@ uint8_t bc95_send_coap(uint8_t *ack){
         #ifdef DEBUG
         printf("ERROR:send data to server error\r\n");
         #endif
+        return ERROR;
    }
-   return 0;
 }
 
+/*----------------------------------------------------------------
+ | Function    :    bc95_read_coap
+ | Description :    读BC95接收到的数据
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
 void bc95_read_coap(uint8_t timeout){
     #ifdef DEBUG
     printf("INFO: bc95 have a coap recv\r\n");
     #endif
     bc95_open_recv();
-    HAL_UART_Transmit_DMA(&huart1, cmd_coap_get_data, strlen((const char*)cmd_coap_get_data));
+    HAL_UART_Transmit_DMA(&huart2, cmd_coap_get_data, strlen((const char*)cmd_coap_get_data));
     do{
         osDelay(BC95_CMD_DELAY);
-        if(bc95_recv.rx_flag == OK){                             // check recv flag
-            if(bc95_check_ack(cmd_ok)){                          // check recv data
-                #ifdef DEBUG    
-                printf("SUCCESS: check ack ok \r\n\r\n");
-                #endif
-                char *begin = strchr((const char*)bc95_recv.rx_buf, ',') + 1;
-                /*!<  copy server command to bc95_recv.server_cmd than */
-                memmove(bc95_recv.server_cmd, begin, (SERVER_CMD_LEN * 2));
-                processing_server_command();
-                return;
-            }else{
-                #ifdef DEBUG
-                printf("ERROR");
-                printf("\r\n----- recv data ---------------\r\n");
-                printf("%s", bc95_recv.rx_buf);
-                printf("\r\n----- end ---------------------\r\n");
-                printf("check ack error ...\r\n\r\n");
-                #endif
-            }
+
+        if(bc95_check_ack(cmd_ok)){                          // check recv data
+            #ifdef DEBUG    
+            printf("SUCCESS: check ack ok \r\n\r\n");
+            #endif
+            char *begin = strchr((const char*)bc95_recv.rx_buf, ',') + 1;
+            /*!<  copy server command to bc95_recv.server_cmd than */
+            memmove(bc95_recv.server_cmd, begin, (SERVER_CMD_LEN * 2));
+            processing_server_command();
+            return;
+        }else{
+            #ifdef DEBUG
+            printf("ERROR");
+            printf("\r\n----- recv data ---------------\r\n");
+            printf("%s", bc95_recv.rx_buf);
+            printf("\r\n----- end ---------------------\r\n");
+            printf("check ack error ...\r\n\r\n");
+            #endif
         }
+        
     }while(timeout--);
     bc95_open_recv();
+}
+
+/*----------------------------------------------------------------
+ | Function    :    bc95_check_recv
+ | Description :    检查BC95是否接收到数据
+ | Input       :    null
+ | Output      :    null
+ | Return      :        ok --> 1    error --> 0
+----------------------------------------------------------------*/
+uint8_t bc95_check_recv(){
+    
+    uint8_t cache[3] = {0};
+    
+    if(bc95_send_command(cmd_check_recv, cmd_ok, 1, 1)){
+        char *begin = strchr((const char*)bc95_recv.rx_buf, '=') + 1;
+        char *end   = strchr((const char*)bc95_recv.rx_buf, ',');
+        uint8_t  csq_len = end - begin;
+        memmove(cache, begin, csq_len);
+        if((bc95_status.recv_buffer = atoi((const char*)cache)) == 0 ){
+            return ERROR;
+        }
+        
+        for(uint8_t i = 0 ; i < bc95_status.recv_buffer ; i++){
+            bc95_read_coap(BC95_TIMEOUT);
+        }
+        
+        return OK;
+    }
+    return ERROR;
 }
         
 /*----------------------------------------------------------------
@@ -499,13 +548,13 @@ void bc95_read_coap(uint8_t timeout){
 void bc95_recv_idle_callback(UART_HandleTypeDef *huart){
     if((__HAL_UART_GET_FLAG(huart,UART_FLAG_IDLE) != RESET))
     {
-        __HAL_UART_CLEAR_IDLEFLAG(&huart1);
-        HAL_UART_DMAStop(&huart1);
-        bc95_recv.rx_size = RX_LEN - (uint32_t)huart1.hdmarx->Instance->CNDTR;
+        __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+        HAL_UART_DMAStop(&huart2);
+        bc95_recv.rx_size = RX_LEN - (uint32_t)huart2.hdmarx->Instance->CNDTR;
         bc95_recv.rx_flag = OK;
         if(strstr((const char*)bc95_recv.rx_buf, (const char*)cmd_coap_have_recv) != NULL){
             bc95_recv.server_cmd_flag = 1;
         }
-        HAL_UART_Receive_DMA(&huart1, bc95_recv.rx_buf, RX_LEN);
+        HAL_UART_Receive_DMA(&huart2, bc95_recv.rx_buf, RX_LEN);
     }
 }

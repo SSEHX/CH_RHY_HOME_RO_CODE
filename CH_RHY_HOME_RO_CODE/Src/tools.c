@@ -2,7 +2,27 @@
 #include <stdlib.h>
 
 uint32_t flash_pages_data[FLASH_DATA_LEN] = {0};
+uint32_t adc_value[60] = {0};
 
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
+    if(htim->Instance == TIM3){
+    
+    }
+}
+
+void start_adc(){
+    HAL_ADCEx_Calibration_Start(&hadc1);
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adc_value, 60);
+    
+}
+
+uint8_t get_low_switch(){
+    return HAL_GPIO_ReadPin(LOW_SWITCH_PORT, LOW_SWITCH_PIN);
+}
+
+uint8_t get_high_switch(){
+    return HAL_GPIO_ReadPin(HIGH_SWITCH_PORT, HIGH_SWITCH_PIN);
+}
 
 uint8_t *ByteToHexStr(const uint8_t* source, uint32_t sourceLen)  
 {  
@@ -32,59 +52,6 @@ uint8_t *ByteToHexStr(const uint8_t* source, uint32_t sourceLen)
     return dest;  
 }
 
-/*----------------------------------------------------------------
- | Function    :    flash_write
- | Description :    write the *data to flash 
- | Input       :    
- | Output      :    
- | Return      :    
-----------------------------------------------------------------*/
-void flash_write(uint32_t *data){
-
-    HAL_FLASH_Unlock();
-
-    FLASH_EraseInitTypeDef f;
-    f.TypeErase = FLASH_TYPEERASE_PAGES;
-    f.PageAddress = FLASH_DATA_ADDR;
-    f.NbPages = 1;
-    uint32_t PageError = 0;
-    HAL_FLASHEx_Erase(&f, &PageError);
-
-    uint32_t addr = FLASH_DATA_ADDR;
-    for(uint8_t i = 0 ; i < FLASH_DATA_LEN ; i++){
-        
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, *data++);
-        addr += 4;
-    }
-    HAL_FLASH_Lock();
-}
-
-void flash_write_word(uint8_t address, uint32_t data){
-
-    HAL_FLASH_Unlock();
-
-    FLASH_EraseInitTypeDef f;
-    f.TypeErase = FLASH_TYPEERASE_PAGES;
-    f.PageAddress = FLASH_DATA_ADDR;
-    f.NbPages = 1;
-    uint32_t PageError = 0;
-    HAL_FLASHEx_Erase(&f, &PageError);
-
-    uint32_t addr = FLASH_DATA_ADDR;
-
-    flash_pages_data[address] = data;
-
-    for(uint8_t i = 0 ; i < FLASH_DATA_LEN ; i++){
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, flash_pages_data[i]);
-        addr += 4;
-    }
-    HAL_FLASH_Lock();
-}
-
-uint32_t flash_read(uint32_t addr){
-    return *(uint32_t*)(FLASH_DATA_ADDR+(addr*4));
-}
-
 void processing_server_command(){
 //    0  2  4  6        14       22 24 26 28 30 32 34 36 38 40 42 44 46
 //    01 01 00 00000000 00000000 00 64 64 64 64 64 64 64 64 64 64 01 43482D524F2D3030303031232323232323232323
@@ -92,7 +59,7 @@ void processing_server_command(){
     uint8_t boot[3] = {0};              
     memmove(boot, &bc95_recv.server_cmd[0], 2);
     device_status.boot = atoi((const char*)boot);
-    
+
     /*!< B 停机开关机 */
     uint8_t arrears_boot[3] = {0};
     memmove(arrears_boot, &bc95_recv.server_cmd[2], 2);
@@ -140,17 +107,40 @@ void processing_server_command(){
     }
 
     /*!< I 冲洗时间 */
-    //uint8_t rinse_time[3] = {0};
-    //memmove(rinse_time, &bc95_recv.server_cmd[86], 2);
-    //sscanf((const char*)rinse_time, "%x", &device_status.rinse_time);
+    uint8_t rinse_time[3] = {0};
+    memmove(rinse_time, &bc95_recv.server_cmd[86], 2);
+    sscanf((const char*)rinse_time, "%x", (uint32_t *)&device_status.rinse_time);
+//0101000000003C000F424001646464646464646464640143482D4E422D3036343639232323232323232323 
+    //06 00 02 00000258 00
 
+    // 制水多长时间冲洗
+    uint8_t create_water_time_rinse[3] = {0};
+    memmove(rinse_time, &bc95_recv.server_cmd[88], 2);
+    sscanf((const char*)create_water_time_rinse, "%x", (uint32_t *)&device_status.create_water_time_rinse);
+    
+    // 流量还是时间
+    uint8_t flow_or_time[3] = {0};
+    memmove(rinse_time, &bc95_recv.server_cmd[90], 2);
+    sscanf((const char*)flow_or_time, "%x", (uint32_t *)&device_status.flow_or_time);
+    
+    /*!< F 换算比例 */
+    uint8_t proportion[9] = {0};
+    memmove(flow, &bc95_recv.server_cmd[92], 8);
+    sscanf((const char*)proportion, "%x", &device_status.proportion);
+    
+    // 用不用水位
+    uint8_t use_water_table[3] = {0};
+    memmove(rinse_time, &bc95_recv.server_cmd[100], 2);
+    sscanf((const char*)use_water_table, "%x", (uint32_t *)&device_status.use_water_table);
+    
     //保存所有设备状态到eeprom
     //flash_device_status();
     
     //设置处理状态为成功 -> 发送当前状态 -> 重置处理状态
     device_status.processing_status = 1;
-    bc95_send_coap("+NSMI:SENT");
+    bc95_send_coap(cmd_coap_send_ok);
     device_status.processing_status = 0;
+    
 }
 /*----------------------------------------------------------------
  | Function    :    flash_device_status
@@ -178,129 +168,141 @@ void flash_device_status(){
     flash_write(flash_pages_data);
 }
 
-void pump_open(){
-    HAL_GPIO_WritePin(PUMP_PORT    , PUMP_PIN    , GPIO_PIN_RESET);
+void open_create_water(){
+    HAL_GPIO_WritePin(CREATE_WATER_PORT, CREATE_WATER_PIN, GPIO_PIN_RESET);
 }
 
-void pump_close(){
-    HAL_GPIO_WritePin(PUMP_PORT    , PUMP_PIN    , GPIO_PIN_SET);
+void shut_create_water(){
+    HAL_GPIO_WritePin(CREATE_WATER_PORT, CREATE_WATER_PIN, GPIO_PIN_SET);
 }
 
-void switch1_open(){
-    HAL_GPIO_WritePin(SWITCH_1_PORT, SWITCH_1_PIN, GPIO_PIN_RESET);
+void open_rinse(){
+    HAL_GPIO_WritePin(RINSE_PORT, RINSE_PIN, GPIO_PIN_RESET);
+
 }
 
-void switch1_close(){
-    HAL_GPIO_WritePin(SWITCH_1_PORT, SWITCH_1_PIN, GPIO_PIN_SET);
+void shut_rinse(){
+    HAL_GPIO_WritePin(RINSE_PORT, RINSE_PIN, GPIO_PIN_SET);
 }
 
-void switch2_open(){
-    HAL_GPIO_WritePin(SWITCH_2_PORT, SWITCH_2_PIN, GPIO_PIN_RESET);
+void open_pump(){
+    HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_RESET);
 }
 
-void switch2_close(){
-    HAL_GPIO_WritePin(SWITCH_2_PORT, SWITCH_2_PIN, GPIO_PIN_SET);
-}
-void switch3_open(){
-    HAL_GPIO_WritePin(SWITCH_3_PORT, SWITCH_3_PIN, GPIO_PIN_RESET);
-}
-
-void switch3_close(){
-    HAL_GPIO_WritePin(SWITCH_3_PORT, SWITCH_3_PIN, GPIO_PIN_SET);
-}
-void switch4_open(){
-    HAL_GPIO_WritePin(SWITCH_4_PORT, SWITCH_4_PIN, GPIO_PIN_RESET);
-}
-
-void switch4_close(){
-    HAL_GPIO_WritePin(SWITCH_4_PORT, SWITCH_4_PIN, GPIO_PIN_SET);
-}
-void switch5_open(){
-    HAL_GPIO_WritePin(SWITCH_5_PORT, SWITCH_5_PIN, GPIO_PIN_RESET);
-}
-
-void switch5_close(){
-    HAL_GPIO_WritePin(SWITCH_5_PORT, SWITCH_5_PIN, GPIO_PIN_SET);
-}
-
-
-void start_rinse(){
-    switch1_close();
-    switch2_close();
-    switch4_close();
-    
-    switch3_open();
-    switch5_open();
-    pump_open();
-}
-
-void stop_rinse(){
-    switch3_close();
-    switch5_close();
-    pump_close();
+void shut_pump(){
+    HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_SET);
 }
 
 void start_create_water(){
-    switch1_close();
-    switch2_close();
-    switch4_close();
-    switch5_close();
-    
-    switch3_open();
-    pump_open();
+    if(device_status.boot == 0){
+        stop_create_water();
+        return ;
+    }
+    open_create_water(); 
+    open_pump();
+    // HAL_TIM_Base_Start_IT(&htim4);
 }
 
 void stop_create_water(){
-    switch3_close();
-    pump_close();
+    shut_create_water();
+    shut_pump();
+    // HAL_TIM_Base_Stop_IT(&htim4);
 }
 
-void start_pure_water_protect_RO(){
-    switch1_close();
-    switch2_close();
-    switch3_close();
-    pump_close();
-    
-    switch4_open();
-    switch5_open();
+/*----------------------------------------------------------------
+ | Function    :    start_rinse
+ | Description :    开始冲洗
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void start_rinse(){
+    if(device_status.boot == 0){
+        stop_rinse();
+        return ;
+    }
+    start_create_water(); 
+    open_rinse();
 }
 
-void stop_pure_water_protect_RO(){
-    switch4_close();
-    switch5_close();
+/*----------------------------------------------------------------
+ | Function    :    status_network_led
+ | Description :    设置网络指示灯
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void status_network_led(GPIO_PinState status){
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, status);
 }
 
-void start_pure_water_protect_UF(){
-    switch5_close();
-    switch3_close();
-    pump_close();
-    
-    switch1_open();
-    switch2_open ();
-    switch4_open();
-    
+/*----------------------------------------------------------------
+ | Function    :    status_error_led
+ | Description :    设置错误指示灯
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void status_error_led(GPIO_PinState status){
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, status);
 }
 
-void stop_pure_water_protect_UF(){
-    switch1_close();
-    switch2_close();
-    switch4_close();
+/*----------------------------------------------------------------
+ | Function    :    start_rinse
+ | Description :    停止冲洗
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void stop_rinse(){
+    stop_create_water();  
+    shut_rinse();
 }
 
-void stop_all_switch(){
-    switch1_close();
-    switch2_close();
-    switch4_close();
-    switch5_close();
-    switch3_close();
-    pump_close();
+/*----------------------------------------------------------------
+ | Function    :    open_wdi
+ | Description :    开启看门狗
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void open_wdi(){
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
 }
 
-void leak_protect(){
-    switch1_open();
-    switch2_close();
-    switch4_close();
-    switch5_close();
-    switch3_close();
-    pump_close();
+/*----------------------------------------------------------------
+ | Function    :    close_wdi
+ | Description :    关闭看门狗
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void close_wdi(){
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
+}
+
+/*----------------------------------------------------------------
+ | Function    :    feed_wdi
+ | Description :    喂狗
+ | Input       :    null
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void feed_wdi(){
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
+}
+
+/*----------------------------------------------------------------
+ | Function    :    beep
+ | Description :    蜂鸣器 响 多少ms
+
+ | Input       :        uint8_t ms
+
+ | Output      :    null
+ | Return      :    null
+----------------------------------------------------------------*/
+void beep(uint8_t ms){
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
+    osDelay(ms);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
 }

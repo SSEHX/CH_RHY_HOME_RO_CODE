@@ -57,7 +57,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -114,8 +114,16 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-    
+  //开启看门狗
+  open_wdi();
+  device_status.rinse = 1;      //开机冲洗，
+  device_status.boot = 1;       //设置设备开机
+  start_adc();                  //开启adc转换
+  //HAL_TIM_IC_Start_IT(htim3, TIM_CHANNEL_3);
+  
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

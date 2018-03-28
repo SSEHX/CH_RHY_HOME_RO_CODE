@@ -1,26 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>/Users/xuqi/Library/Mobile Documents/com~apple~CloudDocs/CH/CH_RHY_HOME_RO_CODE/CH_RHY_HOME_RO_CODE/\CH_RHY_HOME_RO_CODE</ProjectName>
+<ProjectName>C:\Users\orange\iCloudDrive\CH\CH_HOME_RO_CODE\CH_RHY_HOME_RO_CODE\\CH_RHY_HOME_RO_CODE</ProjectName>
 <ProjectNature>C</ProjectNature> 
-<CMSIS>../Drivers/CMSIS</CMSIS>
-<HAL_Driver>/Users/xuqi/STM32Cube/Repository//STM32Cube_FW_F1_V1.6.1/Drivers/CMSIS</HAL_Driver>
+<CMSIS>..\Drivers\CMSIS</CMSIS>
+<HAL_Driver>C:\Users\orange\STM32Cube\Repository\STM32Cube_FW_F1_V1.6.1\Drivers\CMSIS</HAL_Driver>
 <Toolchain>EWARM</Toolchain>
 	<Toolversion>0</Toolversion>
 <Version>0</Version>
 
 <filestoremove>
     <file>
-    <name>..\Src\main.c</name>
-    <name>..\Src\gpio.c</name>
-    <name>..\Src\adc.c</name>
-    <name>..\Src\dma.c</name>
-    <name>..\Src\freertos.c</name>
-    <name>..\Src\tim.c</name>
-    <name>..\Src\usart.c</name>
-    <name>..\Src\stm32f1xx_it.c</name>
-    <name>..\Src\stm32f1xx_hal_msp.c</name>
-    <name>..\Src\stm32f1xx_hal_timebase_TIM.c</name>
-    <name>../\Src/system_stm32f1xx.c</name>
     </file>
 </filestoremove>
 
@@ -29,14 +18,6 @@
 	   <include></include>
     </Aincludes>
 	<Cincludes>
-	   		<include>..\Drivers\STM32F1xx_HAL_Driver\Inc</include>
-	   		<include>..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy</include>
-	   		<include>..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM3</include>
-	   		<include>..\Drivers\CMSIS\Device\ST\STM32F1xx\Include</include>
-	   		<include>..\Middlewares\Third_Party\FreeRTOS\Source\include</include>
-	   		<include>..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</include>
-	   		<include>..\Drivers\CMSIS\Include</include>
-	   		<include>..\Inc</include>
     </Cincludes>
 </inctoremove>
 
@@ -60,7 +41,7 @@
 
     <UsedFreeRTOS>true</UsedFreeRTOS>
     <Aincludes>
-		   		<include>$PROJ_DIR$\..//Inc</include>
+		   		<include>$PROJ_DIR$\..\\Inc</include>
     </Aincludes>
     <Cdefines>
     </Cdefines>
@@ -77,14 +58,14 @@
     </definestoremove>
     
 	<Cincludes>
-	   <include>../Inc</include>
-	   <include>../Drivers/STM32F1xx_HAL_Driver/Inc</include>
-	   <include>../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy</include>
-	   <include>../Middlewares/Third_Party/FreeRTOS/Source/portable/IAR/ARM_CM3</include>
-	   <include>../Drivers/CMSIS/Device/ST/STM32F1xx/Include</include>
-	   <include>../Middlewares/Third_Party/FreeRTOS/Source/include</include>
-	   <include>../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS</include>
-	   <include>../Drivers/CMSIS/Include</include>
+	   <include>..\Inc</include>
+	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc</include>
+	   <include>..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy</include>
+	   <include>..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM3</include>
+	   <include>..\Drivers\CMSIS\Device\ST\STM32F1xx\Include</include>
+	   <include>..\Middlewares\Third_Party\FreeRTOS\Source\include</include>
+	   <include>..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</include>
+	   <include>..\Drivers\CMSIS\Include</include>
 
     </Cincludes>
       </config>
@@ -106,22 +87,22 @@
                                                     <name>../Middlewares/Third_Party/FreeRTOS/Source/portable/IAR/ARM_CM3/portasm.s</name>
                                             </file>
                                             <file>
+                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/croutine.c</name>
+                                            </file>
+                                            <file>
+                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</name>
+                                            </file>
+                                            <file>
                                                     <name>../Middlewares/Third_Party/FreeRTOS/Source/list.c</name>
                                             </file>
                                             <file>
                                                     <name>../Middlewares/Third_Party/FreeRTOS/Source/queue.c</name>
                                             </file>
                                             <file>
-                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/timers.c</name>
-                                            </file>
-                                            <file>
                                                     <name>../Middlewares/Third_Party/FreeRTOS/Source/tasks.c</name>
                                             </file>
                                             <file>
-                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</name>
-                                            </file>
-                                            <file>
-                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/croutine.c</name>
+                                                    <name>../Middlewares/Third_Party/FreeRTOS/Source/timers.c</name>
                                             </file>
                                             <file>
                                                     <name>../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</name>
@@ -181,7 +162,7 @@
 		    <group>
 		    	<name>CMSIS</name>
 							<file>
-								<name>..//Src/system_stm32f1xx.c</name>
+								<name>../\Src/system_stm32f1xx.c</name>
 							</file>
 		    	</group>
 	  </group>   
@@ -190,107 +171,47 @@
 	    <group>
 	      <name>User</name>  
                                 <file>
-                                 <name>../Src/main.c</name>
+                                 <name>..\Src\main.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/gpio.c</name>
+                                 <name>..\Src\gpio.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/adc.c</name>
+                                 <name>..\Src\adc.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/dma.c</name>
+                                 <name>..\Src\dma.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/freertos.c</name>
+                                 <name>..\Src\freertos.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/tim.c</name>
+                                 <name>..\Src\tim.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/usart.c</name>
+                                 <name>..\Src\usart.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/stm32f1xx_it.c</name>
+                                 <name>..\Src\stm32f1xx_it.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/stm32f1xx_hal_msp.c</name>
+                                 <name>..\Src\stm32f1xx_hal_msp.c</name>
                                 </file>
 
                                 <file>
-                                 <name>../Src/stm32f1xx_hal_timebase_TIM.c</name>
+                                 <name>..\Src\stm32f1xx_hal_timebase_TIM.c</name>
                                 </file>
 
 
 
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
-    <group>
-        <name>..</name>
-                    <group>
-                    <name>Src</name>
-                    </group>
-    </group>
 
 </group> 
   </group>

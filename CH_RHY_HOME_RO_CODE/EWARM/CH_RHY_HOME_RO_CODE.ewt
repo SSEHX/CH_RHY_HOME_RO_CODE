@@ -1195,6 +1195,12 @@
         </group>
         <group>
             <name>User</name>
+            <group>
+                <name>..</name>
+                <group>
+                    <name>Src</name>
+                </group>
+            </group>
             <file>
                 <name>$PROJ_DIR$\..\Src\adc.c</name>
             </file>
@@ -1215,6 +1221,9 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\Src\gpio.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\Src\i2c_eeprom.c</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\Src\main.c</name>
