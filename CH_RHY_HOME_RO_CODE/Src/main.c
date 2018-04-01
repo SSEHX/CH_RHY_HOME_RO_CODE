@@ -118,10 +118,12 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   //开启看门狗
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
   open_wdi();
   device_status.rinse = 1;      //开机冲洗，
   device_status.boot = 1;       //设置设备开机
   start_adc();                  //开启adc转换
+  
   //HAL_TIM_IC_Start_IT(htim3, TIM_CHANNEL_3);
   
   /* USER CODE END 2 */

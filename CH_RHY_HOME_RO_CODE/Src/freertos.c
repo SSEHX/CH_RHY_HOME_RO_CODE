@@ -64,7 +64,6 @@ osThreadId ControlTaskHandle;
 osThreadId ErrorCheckTaskHandle;
 osThreadId Bc95RecvTaskHandle;
 osThreadId Bc95SendTaskHandle;
-osSemaphoreId Bc95RecvSemHandle;
 
 /* USER CODE BEGIN Variables */
 
@@ -97,11 +96,6 @@ void MX_FREERTOS_Init(void) {
     /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
-  /* Create the semaphores(s) */
-  /* definition and creation of Bc95RecvSem */
-  osSemaphoreDef(Bc95RecvSem);
-  Bc95RecvSemHandle = osSemaphoreCreate(osSemaphore(Bc95RecvSem), 1);
-
   /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -112,19 +106,27 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of AppTask */
-  osThreadDef(AppTask, StartAppTask, osPriorityHigh, 0, 400);
+  osThreadDef(AppTask, StartAppTask, osPriorityHigh, 0, 128);
   AppTaskHandle = osThreadCreate(osThread(AppTask), NULL);
 
   /* definition and creation of Bc95InitTask */
-  osThreadDef(Bc95InitTask, StartBc95InitTask, osPriorityIdle, 0, 512);
+  osThreadDef(Bc95InitTask, StartBc95InitTask, osPriorityIdle, 0, 800);
   Bc95InitTaskHandle = osThreadCreate(osThread(Bc95InitTask), NULL);
 
   /* definition and creation of ControlTask */
   osThreadDef(ControlTask, StartControlTask, osPriorityAboveNormal, 0, 128);
   ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
 
+  /* definition and creation of ErrorCheckTask */
+  osThreadDef(ErrorCheckTask, StartErrorCheckTask, osPriorityIdle, 0, 256);
+  ErrorCheckTaskHandle = osThreadCreate(osThread(ErrorCheckTask), NULL);
+
+  /* definition and creation of Bc95RecvTask */
+  osThreadDef(Bc95RecvTask, StartBc95RecvTask, osPriorityRealtime, 0, 800);
+  Bc95RecvTaskHandle = osThreadCreate(osThread(Bc95RecvTask), NULL);
+
   /* definition and creation of Bc95SendTask */
-  osThreadDef(Bc95SendTask, StartBc95SendTask, osPriorityIdle, 0, 512);
+  osThreadDef(Bc95SendTask, StartBc95SendTask, osPriorityIdle, 0, 800);
   Bc95SendTaskHandle = osThreadCreate(osThread(Bc95SendTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -152,7 +154,7 @@ void StartAppTask(void const * argument)
         if(device_status.device_mode == 1){             //设备为租赁模式
             
             if(device_status.arrears_boot == 0){        //如果设备欠费则停机
-                    device_status.boot = 0;
+                device_status.boot = 0;
             }
             
             if(device_status.flow_or_time == 1){        //流量模式
@@ -166,7 +168,7 @@ void StartAppTask(void const * argument)
         }
         
         if(send_data_time_count >= 2880){               //48分钟发送一次
-            bc95_send_coap(cmd_coap_send_ok);
+            bc95_status.need_send = 1;
             send_data_time_count = 0;
         }
         osDelay(1000);
@@ -237,11 +239,9 @@ void StartControlTask(void const * argument)
             //允许再次发送缺水信息
             if(device_error.raw_no_water_sended == 1){
                 device_status.processing_status = 0;
-                bc95_send_coap(cmd_coap_send_ok);
+                bc95_status.need_send = 1;
                 device_error.raw_no_water_sended = 0;
-                
             }
-            
             
             //水满，停止制水
             if(get_high_switch()){
@@ -273,7 +273,7 @@ void StartErrorCheckTask(void const * argument)
             leakage_value += adc_value[ i * 3 ];
         }
         /* 计算漏水检测到的数值，并判断是否漏水，如果本次漏水则将漏水计数+1
-           如果不漏水则清0， 
+        如果不漏水则清0， 
         */
         if(leakage_value/20 <= 2500){
             leakage_count++;
@@ -282,7 +282,7 @@ void StartErrorCheckTask(void const * argument)
         }
         
         /* 如果连续漏水超过30秒，则设置漏水标志，
-           如果不漏水了，则设置可以发送错误标志位，并清除错误
+        如果不漏水了，则设置可以发送错误标志位，并清除错误
         */
         if(leakage_count >= 6){
             device_error.leakage = 1;
@@ -292,17 +292,17 @@ void StartErrorCheckTask(void const * argument)
             device_error.leakage = 0;
             if(device_error.leakage_sended == 1){
                 device_status.processing_status = 0;
-                bc95_send_coap(cmd_coap_send_ok);
+                bc95_status.need_send = 1;
                 device_error.leakage_sended = 0;
             }
         }
-            
+        
         //判断是否有错误,如果有错误，则继续检测是什么错误
         if(device_error.bc95_init_error != 0 ||         // bc95初始化失败
            device_error.create_water_too_long != 0 ||   // 制水时间过长
-           device_error.leakage != 0 ||                 // 漏水
-           device_error.raw_no_water != 0 ||            // 原水缺水
-           device_status.arrears_boot == 0 )            // 停机
+               device_error.leakage != 0 ||                 // 漏水
+                   device_error.raw_no_water != 0 ||            // 原水缺水
+                       device_status.arrears_boot == 0 )            // 停机
         {
             
             device_status.processing_status = 3;        //设置错误
@@ -318,17 +318,13 @@ void StartErrorCheckTask(void const * argument)
             
             //检测是否已经缺水，如果已经缺水，并且没有发送错误信息，则发送错误
             if(device_error.raw_no_water == 1 && device_error.raw_no_water_sended == 0){
-                if(bc95_send_coap(cmd_coap_send_ok)){
-                    device_error.raw_no_water_sended = 1;
-                }
+                bc95_status.need_send = 1;
             }
             
             //检测是否发生漏水，如果已经漏水，并且没有发送错误信息，则发送错误信息
             if(device_error.leakage == 1 && device_error.leakage_sended == 0){
                 device_status.boot = 0;                 //漏水关机,
-                if(bc95_send_coap(cmd_coap_send_ok)){
-                    device_error.leakage_sended = 1;
-                }
+                bc95_status.need_send = 1;
             }
             status_error_led(GPIO_PIN_SET);
         }else{
@@ -371,11 +367,26 @@ void StartBc95RecvTask(void const * argument)
 void StartBc95SendTask(void const * argument)
 {
   /* USER CODE BEGIN StartBc95SendTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+    /* Infinite loop */
+    for(;;)
+    {
+        if(bc95_status.need_send == 1){
+            bc95_status.need_send = 0;
+            
+            if(device_error.leakage_sended == 0 && device_error.leakage == 1){
+                device_error.leakage_sended = 1;
+                device_status.processing_status = COAP_DEVICE_ERROR;
+            }
+            
+            if(device_error.raw_no_water_sended == 0 && device_error.raw_no_water == 1){
+                device_error.raw_no_water_sended = 1;
+                device_status.processing_status = COAP_DEVICE_ERROR;
+            }
+            
+            bc95_send_coap(cmd_coap_send_ok);
+        }
+        osDelay(1000);
+    }
   /* USER CODE END StartBc95SendTask */
 }
 

@@ -15,6 +15,12 @@
 #define OK                  1
 #define ERROR               0
 
+#define COAP_NOTHING            0       //正常上报
+#define COAP_RUN_SUCCESS        1       //执行成功
+#define COAP_RUN_ERROR          2       //执行失败
+#define COAP_DEVICE_ERROR       3       //发生错误
+#define COAP_SHUT_SUCCESS       4       //关机成功
+
 #define BC95_CONNECT_ERROR  100
 
 #define RX_LEN              300
@@ -47,6 +53,7 @@ typedef struct{
     uint16_t    snr;                /*!< nsr                      */
     uint8_t     profile_status;     /*!< profile status           */
     uint8_t     recv_buffer;          
+    uint8_t     need_send;
 }bc95_statusTypeDef;
 
 extern bc95_statusTypeDef bc95_status;
